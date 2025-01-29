@@ -2,7 +2,7 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=staging";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=staging-next";
     nixpkgs-cached.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
   };
 
@@ -27,11 +27,6 @@
             name = "nixpkgs-patched";
             src = nixpkgs;
             patches = with nixpkgs-cached.legacyPackages.${system}.pkgs; [
-              # (fetchpatch {
-              #   # xmlto
-              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/353329.patch";
-              #   hash = "sha256-9rCD52mnQlOopDqZfSJDE1WYXJJLcHP/ylnhUU2fnqs=";
-              # })
               # (fetchpatch {
               #   # buildNodePackage
               #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/362151.patch";
@@ -81,6 +76,7 @@
                       __impureHostDeps = [ "/System/Library/Fonts" ];
                     };
 
+                    # TODO: can be removed soon, disable already merged to staging and staging-next
                     uvloop = python-prev.uvloop.overrideAttrs {
                       disabledTestPaths = [
                         # Regardless of sandbox, this test just fails on my machine
@@ -102,9 +98,9 @@
                 # fontforge = prev.fontforge.overrideAttrs { strictDeps = false; };
 
                 # TODO: maybe not needed?
-                mbedtls = prev.mbedtls.overrideAttrs {
-                  env.NIX_CFLAGS_COMPILE = "-Wno-error=unused-command-line-argument";
-                };
+                # mbedtls = prev.mbedtls.overrideAttrs {
+                #   env.NIX_CFLAGS_COMPILE = "-Wno-error=unused-command-line-argument";
+                # };
 
                 wolfssl = prev.wolfssl.overrideAttrs {
                   # test_wolfSSL_CTX_load_system_CA_certs
@@ -247,7 +243,7 @@
                 curl
                 dart
                 deno
-                # devenv # /usr/bin/security access in tests
+                devenv # /usr/bin/security access in tests
                 difftastic
                 direnv
                 dua
