@@ -32,6 +32,11 @@
                 url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/362151.patch";
                 hash = "sha256-BX+ZCtemTnYJm179MixccZsRi+9om40Q6U3h+0dr4fE=";
               })
+              # cairo sandbox stuff
+              (fetchpatch {
+                url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/381538.diff";
+                hash = "sha256-xHHArb1rL32YtTuLs6VW7jsqPcDPTxUwIWnJ1nGlAXA=";
+              })
             ];
           };
           pkgs = import nixpkgsPatched {
@@ -42,20 +47,6 @@
               (final: prev: {
                 pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
                   (python-final: python-prev: {
-
-                    # Sandbox issue, tries to load system fonts.
-                    # It's surfaced as a Cairo memory error in tests
-                    cairocffi = python-prev.cairocffi.overrideAttrs {
-                      __impureHostDeps = [ "/System/Library/Fonts" ];
-                      #   disabledTests = [
-                      #     "test_recording_surface"
-                      #     "test_unbounded_recording_surface"
-                      #     "test_context_font"
-                      #     "test_scaled_font"
-                      #     "test_glyphs"
-                      #   ];
-                    };
-
                     pyasynchat = python-prev.pyasynchat.overrideAttrs {
                       __darwinAllowLocalNetworking = true;
                     };
@@ -67,29 +58,12 @@
                     geoip2 = python-prev.geoip2.overrideAttrs {
                       __darwinAllowLocalNetworking = true;
                     };
-                    pycairo = python-prev.pycairo.overrideAttrs {
-                      __impureHostDeps = [ "/System/Library/Fonts" ];
-                    };
 
-                    pygal = python-prev.pygal.overrideAttrs {
-                      __impureHostDeps = [ "/System/Library/Fonts" ];
-                    };
 
                   })
                 ];
 
                 fontforge = prev.fontforge.overrideAttrs { strictDeps = false; };
-
-                _1password-cli = prev._1password-cli.overrideAttrs (prevDrv: {
-                  nativeBuildInputs = prevDrv.nativeBuildInputs ++ [
-                    prev.xar
-                    prev.cpio
-                  ];
-                });
-
-                yaml-language-server = prev.yaml-language-server.overrideAttrs (prevDrv: {
-                  nativeBuildInputs = prevDrv.nativeBuildInputs ++ [ prev.nodejs ];
-                });
 
                 # wolfssl = prev.wolfssl.overrideAttrs {
                 #   # test_wolfSSL_CTX_load_system_CA_certs
@@ -148,6 +122,12 @@
                     yaml = prev.haskell.lib.overrideCabal hs-prev.yaml (drv: {
                       testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
                     });
+                    say = prev.haskell.lib.overrideCabal hs-prev.say (drv: {
+                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
+                    });
+                    ascii-progress = prev.haskell.lib.overrideCabal hs-prev.ascii-progress (drv: {
+                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
+                    });
                   };
                 };
               })
@@ -160,8 +140,12 @@
           sandbox-test = pkgs.buildEnv {
             name = "sandbox-test";
             paths = with pkgs; [
+              nodejs
+              nodejs-slim
+              nodejs_20
               wolfssl
-              cargo
+              xcpretty
+              # marksman
             ];
           };
 
@@ -177,12 +161,23 @@
           test = pkgs.buildEnv {
             name = "test";
             paths = with pkgs; [
-              _1password-cli
+              ruby
+              ruby_3_4
+              ruby_3_2
+              ruby_3_1
+              go_1_22
+              go_1_23
+              go_1_24
+              python311
+              python312
+              python313
             ];
+            ignoreCollisions = true;
           };
 
           default = pkgs.buildEnv {
             name = "regression-pkg-set";
+            ignoreCollisions = true;
             paths =
               with pkgs;
               [
@@ -195,7 +190,7 @@
                 awscli2
                 bash-language-server
                 bat
-                # bat-extras # something is broken on staging, it's not strictDeps nor sandbox
+                # bat-extras # sandbox issue in tests
                 bazelisk
                 bitrise
                 borgmatic
@@ -208,7 +203,7 @@
                 curl
                 dart
                 deno
-                # devenv # /usr/bin/security access in tests
+                devenv # /usr/bin/security access in tests
                 difftastic
                 direnv
                 dua
