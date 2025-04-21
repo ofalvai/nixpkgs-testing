@@ -2,7 +2,7 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=staging";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=master";
     nixpkgs-cached.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
   };
 
@@ -28,21 +28,26 @@
             src = nixpkgs;
             patches = with nixpkgs-cached.legacyPackages.${system}.pkgs; [
               # node + strictDeps
-              (fetchpatch {
-                url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/362151.patch";
-                hash = "sha256-BX+ZCtemTnYJm179MixccZsRi+9om40Q6U3h+0dr4fE=";
-              })
-              # cairo sandbox stuff
-              (fetchpatch {
-                url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/381538.diff";
-                hash = "sha256-xHHArb1rL32YtTuLs6VW7jsqPcDPTxUwIWnJ1nGlAXA=";
-              })
+              # (fetchpatch {
+              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/362151.patch";
+              #   hash = "sha256-MWagFdcI+qc/amSCwRQmBfu19nuTseet+Q+ZfzgMEx0=";
+              # })
+              # # curl 8.13
+              # (fetchpatch {
+              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/396200.patch";
+              #   hash = "sha256-BjyGIMfSibgdP0lxY64PT/K6jBpBkRhXAcs/29Arcy4=";
+              # })
+              # randy libc++ rework
+              # (fetchpatch {
+              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/398727.patch";
+              #   hash = "sha256-lAj0XhMpKcS8mucs28xb/cNsd0uQvPs8Hmo9hrQIqQk=";
+              # })
             ];
           };
           pkgs = import nixpkgsPatched {
             inherit system;
             config.allowUnfree = true;
-            config.strictDepsByDefault = true;
+            # config.strictDepsByDefault = true;
             overlays = [
               (final: prev: {
                 pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
@@ -59,10 +64,20 @@
                       __darwinAllowLocalNetworking = true;
                     };
 
+                    smtpdfix = python-prev.smtpdfix.overrideAttrs {
+                      __darwinAllowLocalNetworking = true;
+                    };
+                    mocket = python-prev.mocket.overrideAttrs (mocket-prev: {
+                      __darwinAllowLocalNetworking = true;
+                      disabledTests = mocket-prev.disabledTests ++ [ "test_httprettish_httpx_session" ];
+
+                    });
+                    blockbuster = python-prev.blockbuster.overrideAttrs {
+                      __darwinAllowLocalNetworking = true;
+                    };
 
                   })
                 ];
-
                 fontforge = prev.fontforge.overrideAttrs { strictDeps = false; };
 
                 # wolfssl = prev.wolfssl.overrideAttrs {
@@ -203,7 +218,7 @@
                 curl
                 dart
                 deno
-                devenv # /usr/bin/security access in tests
+                # devenv # /usr/bin/security access in tests
                 difftastic
                 direnv
                 dua
@@ -218,7 +233,6 @@
                 git-lfs
                 gnupg
                 go
-                go_1_22
                 go_1_23
                 go_1_24
                 google-cloud-sdk
