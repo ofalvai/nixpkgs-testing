@@ -218,6 +218,7 @@
                 curl
                 dart
                 deno
+                deploy-rs
                 # devenv # /usr/bin/security access in tests
                 difftastic
                 direnv
@@ -230,7 +231,9 @@
                 fzf
                 gh
                 git
+                git-branchless
                 git-lfs
+                github-mcp-server
                 gnupg
                 go
                 go_1_23
@@ -245,6 +248,7 @@
                 imagemagick
                 jdk17_headless
                 jq
+                jujutsu
                 just
                 kotlin
                 lazygit
@@ -258,11 +262,13 @@
                 nil
                 nix-direnv
                 nix-output-monitor
+                nix-search-cli
                 nix-tree
                 nix-your-shell
                 nixd
                 nixfmt-rfc-style
                 nixpkgs-review
+                nushell
                 nvd
                 openconnect
                 openvpn
@@ -288,11 +294,16 @@
                 spotify-player
                 starship
                 svelte-language-server
+                tailscale
+                tealdeer
+                terminal-notifier
                 tree
                 typescript-language-server
+                watchman
                 wezterm
                 wget
                 xcpretty
+                xh
                 yamllint
                 yaml-language-server
                 zeromq
