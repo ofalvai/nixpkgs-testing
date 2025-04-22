@@ -75,7 +75,10 @@
                     blockbuster = python-prev.blockbuster.overrideAttrs {
                       __darwinAllowLocalNetworking = true;
                     };
-
+                    anyio = python-prev.anyio.overrideAttrs (anyio-prev: {
+                      # Becomes flaky under heavy load: asserts empty logs, but a slowness warning appears in logs
+                      disabledTests = anyio-prev.disabledTests ++ [ "test_asyncio_run_sync_called" ];
+                    });
                   })
                 ];
                 fontforge = prev.fontforge.overrideAttrs { strictDeps = false; };
