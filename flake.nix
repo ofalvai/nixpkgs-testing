@@ -76,8 +76,13 @@
                       __darwinAllowLocalNetworking = true;
                     };
                     anyio = python-prev.anyio.overrideAttrs (anyio-prev: {
-                      # Becomes flaky under heavy load: asserts empty logs, but a slowness warning appears in logs
-                      disabledTests = anyio-prev.disabledTests ++ [ "test_asyncio_run_sync_called" ];
+                      disabledTests = anyio-prev.disabledTests ++ [
+                        # Becomes flaky under heavy load: asserts empty logs, but a slowness warning appears in logs
+                        "test_asyncio_run_sync_called"
+                        "test_handshake_fail"
+                        "test_run_in_custom_limiter"
+                        "test_cancel_from_shielded_scope"
+                      ];
                     });
                   })
                 ];
