@@ -2,7 +2,7 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=master";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=staging";
     nixpkgs-cached.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
   };
 
@@ -27,20 +27,15 @@
             name = "nixpkgs-patched";
             src = nixpkgs;
             patches = with nixpkgs-cached.legacyPackages.${system}.pkgs; [
-              # node + strictDeps
+              # python + darwin sandbox fixes
+              (fetchpatch {
+                url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/402244.patch";
+                hash = "sha256-EWsHBAAdvlCwSlqLG5XVjicHF5O8sChkwn6a8DzlzIo=";
+              })
+              # nodejs: use more shared libs
               # (fetchpatch {
-              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/362151.patch";
-              #   hash = "sha256-MWagFdcI+qc/amSCwRQmBfu19nuTseet+Q+ZfzgMEx0=";
-              # })
-              # # curl 8.13
-              # (fetchpatch {
-              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/396200.patch";
-              #   hash = "sha256-BjyGIMfSibgdP0lxY64PT/K6jBpBkRhXAcs/29Arcy4=";
-              # })
-              # randy libc++ rework
-              # (fetchpatch {
-              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/398727.patch";
-              #   hash = "sha256-lAj0XhMpKcS8mucs28xb/cNsd0uQvPs8Hmo9hrQIqQk=";
+              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/401454.patch";
+              #   hash = "sha256-vxUlV9KnhJerktUi+/BK62JDGf3N3kv2CFiXFx358ss=";
               # })
             ];
           };
@@ -52,38 +47,6 @@
               (final: prev: {
                 pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
                   (python-final: python-prev: {
-                    pyasynchat = python-prev.pyasynchat.overrideAttrs {
-                      __darwinAllowLocalNetworking = true;
-                    };
-
-                    requests-futures = python-prev.requests-futures.overrideAttrs {
-                      __darwinAllowLocalNetworking = true;
-                    };
-
-                    geoip2 = python-prev.geoip2.overrideAttrs {
-                      __darwinAllowLocalNetworking = true;
-                    };
-
-                    smtpdfix = python-prev.smtpdfix.overrideAttrs {
-                      __darwinAllowLocalNetworking = true;
-                    };
-                    mocket = python-prev.mocket.overrideAttrs (mocket-prev: {
-                      __darwinAllowLocalNetworking = true;
-                      disabledTests = mocket-prev.disabledTests ++ [ "test_httprettish_httpx_session" ];
-
-                    });
-                    blockbuster = python-prev.blockbuster.overrideAttrs {
-                      __darwinAllowLocalNetworking = true;
-                    };
-                    anyio = python-prev.anyio.overrideAttrs (anyio-prev: {
-                      disabledTests = anyio-prev.disabledTests ++ [
-                        # Becomes flaky under heavy load: asserts empty logs, but a slowness warning appears in logs
-                        "test_asyncio_run_sync_called"
-                        "test_handshake_fail"
-                        "test_run_in_custom_limiter"
-                        "test_cancel_from_shielded_scope"
-                      ];
-                    });
                   })
                 ];
                 fontforge = prev.fontforge.overrideAttrs { strictDeps = false; };
@@ -111,8 +74,14 @@
 
                 haskellPackages = prev.haskellPackages.override {
                   overrides = hs-final: hs-prev: {
-
                     servant-client = hs-prev.servant-client.overrideAttrs {
+                      __darwinAllowLocalNetworking = true;
+                    };
+
+                    servant-auth-client = hs-prev.servant-auth-client.overrideAttrs {
+                      __darwinAllowLocalNetworking = true;
+                    };
+                    network = hs-prev.network.overrideAttrs {
                       __darwinAllowLocalNetworking = true;
                     };
 
@@ -168,34 +137,7 @@
               nodejs_20
               wolfssl
               xcpretty
-              # marksman
             ];
-          };
-
-          heavy = pkgs.buildEnv {
-            name = "heavy-pkgs";
-            paths = with pkgs; [
-              nodejs
-              nodejs-slim
-              nodejs_20
-            ];
-          };
-
-          test = pkgs.buildEnv {
-            name = "test";
-            paths = with pkgs; [
-              ruby
-              ruby_3_4
-              ruby_3_2
-              ruby_3_1
-              go_1_22
-              go_1_23
-              go_1_24
-              python311
-              python312
-              python313
-            ];
-            ignoreCollisions = true;
           };
 
           default = pkgs.buildEnv {
@@ -205,15 +147,19 @@
               with pkgs;
               [
                 _1password-cli
+                affine
+                # TODO: pythonPackages.future doesn't work with 3.13, textfsm depends on it
                 ansible
                 ansible-language-server
                 ansible-lint
                 aria
+                asciinema
+                asciinema_3
                 atuin
+                # anytype
                 awscli2
                 bash-language-server
                 bat
-                # bat-extras # sandbox issue in tests
                 bazelisk
                 bitrise
                 borgmatic
@@ -242,7 +188,7 @@
                 git-branchless
                 git-lfs
                 github-mcp-server
-                gnupg
+                # gnupg
                 go
                 go_1_23
                 go_1_24
@@ -256,13 +202,15 @@
                 imagemagick
                 jdk17_headless
                 jq
-                jujutsu
+                # jujutsu
                 just
                 kotlin
+                languagetool
                 lazygit
+                logseq
                 lokalise2-cli
                 lsd
-                # marksman # dotnet sandbox issue?
+                # marksman
                 mercurial
                 metabase
                 micro
@@ -276,6 +224,7 @@
                 nixd
                 nixfmt-rfc-style
                 nixpkgs-review
+                nodePackages.tiddlywiki
                 nushell
                 nvd
                 openconnect
@@ -304,7 +253,6 @@
                 svelte-language-server
                 tailscale
                 tealdeer
-                terminal-notifier
                 tree
                 typescript-language-server
                 watchman
@@ -327,6 +275,7 @@
                 rectangle
                 swift-quit
                 tart
+                terminal-notifier
                 utm
                 xcodes
                 xcode-install
