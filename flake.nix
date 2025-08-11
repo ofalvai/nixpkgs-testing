@@ -2,7 +2,7 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=staging";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=staging-next";
     nixpkgs-cached.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
   };
 
@@ -30,47 +30,31 @@
               # python + darwin sandbox fixes
               (fetchpatch {
                 url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/402244.patch";
-                hash = "sha256-EWsHBAAdvlCwSlqLG5XVjicHF5O8sChkwn6a8DzlzIo=";
+                hash = "sha256-oQNxog28WoMAG0BuD6SoZxmPlKwz+rZxECaURkeXx4c=";
               })
-              # nodejs: use more shared libs
               # (fetchpatch {
-              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/401454.patch";
-              #   hash = "sha256-vxUlV9KnhJerktUi+/BK62JDGf3N3kv2CFiXFx358ss=";
+              #   name = "nodejs-darwin-sandbox";
+              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/425699.patch";
+              #   hash = "sha256-m5LJ3/4NlZnldA/j6AWguwBNUMa42sng3ILLKi67G0I=";
               # })
             ];
           };
           pkgs = import nixpkgsPatched {
             inherit system;
             config.allowUnfree = true;
-            # config.strictDepsByDefault = true;
             overlays = [
               (final: prev: {
                 pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
                   (python-final: python-prev: {
                   })
                 ];
-                fontforge = prev.fontforge.overrideAttrs { strictDeps = false; };
 
-                # wolfssl = prev.wolfssl.overrideAttrs {
-                #   # test_wolfSSL_CTX_load_system_CA_certs
-                #   # TODO: it's still not enough
-                #   __impureHostDeps = [ "/System/Library/Security/Certificates.bundle" ];
-                #   __darwinAllowLocalNetworking = true;
-                # };
-
-                cinny-desktop = prev.cinny-desktop.overrideAttrs {
+                cinny-desktop = prev.cinny-desktop.overrideAttrs(prevCinny: {
                   # tries to access HOME only in aarch64-darwin environment when building mac-notification-sys
                   preBuild = ''
                     export HOME=$TMPDIR
                   '';
-                };
-
-                spotify-player = prev.spotify-player.overrideAttrs {
-                  # tries to access HOME only in aarch64-darwin environment when building mac-notification-sys
-                  preBuild = ''
-                    export HOME=$TMPDIR
-                  '';
-                };
+                });
 
                 haskellPackages = prev.haskellPackages.override {
                   overrides = hs-final: hs-prev: {
@@ -81,45 +65,6 @@
                     servant-auth-client = hs-prev.servant-auth-client.overrideAttrs {
                       __darwinAllowLocalNetworking = true;
                     };
-                    network = hs-prev.network.overrideAttrs {
-                      __darwinAllowLocalNetworking = true;
-                    };
-
-                    here = prev.haskell.lib.overrideCabal hs-prev.here (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-
-                    language-docker_11_0_0 = prev.haskell.lib.overrideCabal hs-prev.language-docker_11_0_0 (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-
-                    http-date = prev.haskell.lib.overrideCabal hs-prev.http-date (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    http-types = prev.haskell.lib.overrideCabal hs-prev.http-types (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    auto-update = prev.haskell.lib.overrideCabal hs-prev.auto-update (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    text-zipper = prev.haskell.lib.overrideCabal hs-prev.text-zipper (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    word8 = prev.haskell.lib.overrideCabal hs-prev.word8 (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    hspec-wai = prev.haskell.lib.overrideCabal hs-prev.hspec-wai (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    yaml = prev.haskell.lib.overrideCabal hs-prev.yaml (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    say = prev.haskell.lib.overrideCabal hs-prev.say (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
-                    ascii-progress = prev.haskell.lib.overrideCabal hs-prev.ascii-progress (drv: {
-                      testToolDepends = drv.testToolDepends or [ ] ++ [ hs-final.hspec-discover ];
-                    });
                   };
                 };
               })
@@ -131,6 +76,7 @@
 
           sandbox-test = pkgs.buildEnv {
             name = "sandbox-test";
+            ignoreCollisions = true;
             paths = with pkgs; [
               nodejs
               nodejs-slim
@@ -140,6 +86,8 @@
             ];
           };
 
+          test = pkgs.python313Packages.mypy;
+
           default = pkgs.buildEnv {
             name = "regression-pkg-set";
             ignoreCollisions = true;
@@ -147,16 +95,15 @@
               with pkgs;
               [
                 _1password-cli
-                affine
-                # TODO: pythonPackages.future doesn't work with 3.13, textfsm depends on it
+                # affine
                 ansible
                 ansible-language-server
                 ansible-lint
-                aria
+                aria2
                 asciinema
                 asciinema_3
                 atuin
-                # anytype
+                attic-client
                 awscli2
                 bash-language-server
                 bat
@@ -167,16 +114,18 @@
                 btop
                 bundler
                 cinny-desktop
+                claude-code
                 cmake
                 ctop
                 curl
                 dart
                 deno
                 deploy-rs
-                # devenv # /usr/bin/security access in tests
+                devenv
                 difftastic
                 direnv
                 dua
+                eza
                 fastlane
                 fd
                 fish
@@ -188,7 +137,7 @@
                 git-branchless
                 git-lfs
                 github-mcp-server
-                # gnupg
+                gnupg
                 go
                 go_1_23
                 go_1_24
@@ -201,16 +150,19 @@
                 hydra-check
                 imagemagick
                 jdk17_headless
+                jetbrains-mono
                 jq
-                # jujutsu
+                jujutsu
                 just
                 kotlin
                 languagetool
                 lazygit
+                lixPackageSets.latest.lix
                 logseq
+                localsend
                 lokalise2-cli
                 lsd
-                # marksman
+                marksman
                 mercurial
                 metabase
                 micro
@@ -227,7 +179,6 @@
                 nodePackages.tiddlywiki
                 nushell
                 nvd
-                openconnect
                 openvpn
                 packer
                 parallel
@@ -244,17 +195,18 @@
                 qemu
                 rbenv
                 readline
+                rsync
                 ripgrep
                 screen
                 shellcheck
                 sonar-scanner-cli
-                spotify-player
                 starship
                 svelte-language-server
                 tailscale
                 tealdeer
                 tree
                 typescript-language-server
+                vscode-langservers-extracted
                 watchman
                 wezterm
                 wget
@@ -262,6 +214,7 @@
                 xh
                 yamllint
                 yaml-language-server
+                yt-dlp
                 zeromq
                 zsh
                 zstd
@@ -282,6 +235,26 @@
               ]
               ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
 
+                clickhouse
+                docker
+                grafana
+                plausible
+                nixos-rebuild-ng
+                postgresql
+                ctop
+                prometheus
+                prometheus-node-exporter
+                prometheus-postgres-exporter
+                redlib
+                cadvisor
+                podman
+                raspberrypi-eeprom
+                bluez
+                smartmontools
+                telegraf
+                node-red
+                snowflake
+                mosquitto
               ];
           };
         }
