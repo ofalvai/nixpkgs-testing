@@ -32,11 +32,6 @@
                 url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/402244.patch";
                 hash = "sha256-oQNxog28WoMAG0BuD6SoZxmPlKwz+rZxECaURkeXx4c=";
               })
-              # (fetchpatch {
-              #   name = "nodejs-darwin-sandbox";
-              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/425699.patch";
-              #   hash = "sha256-m5LJ3/4NlZnldA/j6AWguwBNUMa42sng3ILLKi67G0I=";
-              # })
             ];
           };
           pkgs = import nixpkgsPatched {
@@ -78,15 +73,14 @@
             name = "sandbox-test";
             ignoreCollisions = true;
             paths = with pkgs; [
-              nodejs
-              nodejs-slim
-              nodejs_20
               wolfssl
               xcpretty
+              # https://github.com/harfbuzz/harfbuzz/blob/772279df448bdb550704e8dccd7f865bd0700cbd/test/api/test-coretext.c#L72
+              harfbuzz
             ];
           };
 
-          test = pkgs.python313Packages.mypy;
+          test = pkgs.borgmatic;
 
           default = pkgs.buildEnv {
             name = "regression-pkg-set";
@@ -94,16 +88,16 @@
             paths =
               with pkgs;
               [
-                _1password-cli
                 # affine
+                _1password-cli
                 ansible
                 ansible-language-server
                 ansible-lint
                 aria2
                 asciinema
                 asciinema_3
-                atuin
                 attic-client
+                atuin
                 awscli2
                 bash-language-server
                 bat
@@ -113,6 +107,7 @@
                 broot
                 btop
                 bundler
+                cargo-semver-checks
                 cinny-desktop
                 claude-code
                 cmake
@@ -128,8 +123,8 @@
                 eza
                 fastlane
                 fd
-                fish
                 firebase-tools
+                fish
                 flow
                 fzf
                 gh
@@ -139,18 +134,18 @@
                 github-mcp-server
                 gnupg
                 go
-                go_1_23
                 go_1_24
+                go_1_25
                 google-cloud-sdk
                 gopls
                 groovy
-                helix
                 hadolint
+                helix
                 hugo
                 hydra-check
                 imagemagick
                 jdk17_headless
-                jetbrains-mono
+                # jetbrains-mono
                 jq
                 jujutsu
                 just
@@ -158,11 +153,11 @@
                 languagetool
                 lazygit
                 lixPackageSets.latest.lix
-                logseq
                 localsend
+                logseq
                 lokalise2-cli
                 lsd
-                marksman
+                # marksman
                 mercurial
                 metabase
                 micro
@@ -195,8 +190,8 @@
                 qemu
                 rbenv
                 readline
-                rsync
                 ripgrep
+                rsync
                 screen
                 shellcheck
                 sonar-scanner-cli
@@ -212,8 +207,8 @@
                 wget
                 xcpretty
                 xh
-                yamllint
                 yaml-language-server
+                yamllint
                 yt-dlp
                 zeromq
                 zsh
@@ -222,39 +217,41 @@
               ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
                 cocoapods
                 goku
-                karabiner-elements
                 jazzy
+                karabiner-elements
                 raycast
                 rectangle
                 swift-quit
                 tart
                 terminal-notifier
                 utm
-                xcodes
                 xcode-install
+                xcodes
               ]
               ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
 
+                bluez
+                cadvisor
                 clickhouse
-                docker
-                grafana
-                plausible
-                nixos-rebuild-ng
-                postgresql
                 ctop
+                docker
+                ghostty
+                grafana
+                mosquitto
+                nixos-rebuild-ng
+                node-red
+                plausible
+                podman
+                postgresql
                 prometheus
                 prometheus-node-exporter
                 prometheus-postgres-exporter
-                redlib
-                cadvisor
-                podman
                 raspberrypi-eeprom
-                bluez
+                redlib
                 smartmontools
-                telegraf
-                node-red
                 snowflake
-                mosquitto
+                telegraf
+                traefik
               ];
           };
         }
