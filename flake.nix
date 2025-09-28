@@ -27,11 +27,16 @@
             name = "nixpkgs-patched";
             src = nixpkgs;
             patches = with nixpkgs-cached.legacyPackages.${system}.pkgs; [
-              # python + darwin sandbox fixes
               (fetchpatch {
+                name = "python-darwin-sandbox-fixes";
                 url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/402244.patch";
                 hash = "sha256-oQNxog28WoMAG0BuD6SoZxmPlKwz+rZxECaURkeXx4c=";
               })
+              # (fetchpatch {
+              #   name = "nodejs-shared-libs";
+              #   url = "https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/401454.patch";
+              #   hash = "sha256-DLusI/Yr67vFkH/52jdYwqiUpXhV6I71lKkb69086/Y=";
+              # })
             ];
           };
           pkgs = import nixpkgsPatched {
@@ -44,12 +49,22 @@
                   })
                 ];
 
-                cinny-desktop = prev.cinny-desktop.overrideAttrs(prevCinny: {
+                cinny-desktop = prev.cinny-desktop.overrideAttrs (prevCinny: {
                   # tries to access HOME only in aarch64-darwin environment when building mac-notification-sys
                   preBuild = ''
                     export HOME=$TMPDIR
                   '';
                 });
+
+                toml11 = prev.toml11.overrideAttrs {
+                  patches = [
+                    (prev.fetchpatch {
+                      name = "todo";
+                      url = "https://patch-diff.githubusercontent.com/raw/ToruNiina/toml11/pull/285.patch";
+                      hash = "sha256-LZPr/cY6BZXC6/rBIAMCcqEdnhJs1AvbrPjpHF76uKg=";
+                    })
+                  ];
+                };
 
                 haskellPackages = prev.haskellPackages.override {
                   overrides = hs-final: hs-prev: {
@@ -80,7 +95,7 @@
             ];
           };
 
-          test = pkgs.borgmatic;
+          test = pkgs.nixd;
 
           default = pkgs.buildEnv {
             name = "regression-pkg-set";
@@ -91,14 +106,14 @@
                 # affine
                 _1password-cli
                 ansible
-                ansible-language-server
+                # ansible-language-server
                 ansible-lint
                 aria2
                 asciinema
                 asciinema_3
                 attic-client
                 atuin
-                awscli2
+                # awscli2
                 bash-language-server
                 bat
                 bazelisk
@@ -118,7 +133,10 @@
                 deploy-rs
                 devenv
                 difftastic
+                diffutils
                 direnv
+                docker
+                docker-compose
                 dua
                 eza
                 fastlane
@@ -128,6 +146,7 @@
                 flow
                 fzf
                 gh
+                ghostty
                 git
                 git-branchless
                 git-lfs
@@ -145,7 +164,7 @@
                 hydra-check
                 imagemagick
                 jdk17_headless
-                # jetbrains-mono
+                jetbrains-mono
                 jq
                 jujutsu
                 just
@@ -156,8 +175,9 @@
                 localsend
                 logseq
                 lokalise2-cli
+                lnav
                 lsd
-                # marksman
+                marksman
                 mercurial
                 metabase
                 micro
@@ -229,18 +249,19 @@
                 xcodes
               ]
               ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-
                 bluez
                 cadvisor
                 clickhouse
-                ctop
-                docker
+                e2fsprogs
                 ghostty
                 grafana
+                logrotate
+                lvm2
                 mosquitto
                 nixos-rebuild-ng
                 node-red
                 plausible
+                pipewire
                 podman
                 postgresql
                 prometheus
