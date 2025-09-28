@@ -56,16 +56,6 @@
                   '';
                 });
 
-                toml11 = prev.toml11.overrideAttrs {
-                  patches = [
-                    (prev.fetchpatch {
-                      name = "todo";
-                      url = "https://patch-diff.githubusercontent.com/raw/ToruNiina/toml11/pull/285.patch";
-                      hash = "sha256-LZPr/cY6BZXC6/rBIAMCcqEdnhJs1AvbrPjpHF76uKg=";
-                    })
-                  ];
-                };
-
                 haskellPackages = prev.haskellPackages.override {
                   overrides = hs-final: hs-prev: {
                     servant-client = hs-prev.servant-client.overrideAttrs {
@@ -113,7 +103,7 @@
                 asciinema_3
                 attic-client
                 atuin
-                # awscli2
+                awscli2
                 bash-language-server
                 bat
                 bazelisk
